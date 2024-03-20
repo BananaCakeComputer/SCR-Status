@@ -16,14 +16,21 @@ headers = {
 'Sec-Fetch-Mode': 'cors',
 'Sec-Fetch-Site': 'same-origin',
 'TE': 'trailers'}
+stationLocation = {
+'': '',
+'': ''}
 pg = 1
 subWin = []
 roleColors = {'Guards': '#ebbc25','Drivers': '#d84340', 'Passengers': '#8a889e', 'Dispatchers': '#eb842d', 'Signallers': '#12af86'}
 class Subwin:
     def __init__(self, par, info):
+        self.remainTop = IntVar()
+        self.remainTop.set(0)
         self.createMap(par, info)
     def createMap(self, par, info):
         self.root = Toplevel(par)
+        self.root.resizable(False, False)
+        self.root.after(1000, self.checkRemainTop)
         self.root.title('Server ' + info['name'] + ' (' + info['id'] + ') - Map')
         self.cvs = Canvas(self.root, bg = '#d6dee6',  width=900, height=760)
         self.map = ImageTk.PhotoImage(Image.open("scr-22-09-01.png").resize((900, 675), Image.LANCZOS))
@@ -48,15 +55,45 @@ class Subwin:
         self.root.mainloop()
     def createDetailedList(self, par, info):
         self.rootb = Toplevel(par)
+        self.rootb.resizable(False, False)
         self.rootb.title('Server ' + info['name'] + ' (' + info['id'] + ') - Details')
         self.fr = ttk.Frame(self.rootb, padding = '10')
         self.fr.grid()
-        self.allStopping = IntVar()
-        self.allStopping.set(1)
-        ttk.Checkbutton(self.fr, variable = self.allStopping, text = 'Show all stopping stations', command = lambda : print(1)).grid(column=0, row=0)
+        ttk.Button(self.fr, text = 'Refresh').grid(column=0, row=0)
+        #ttk.Checkbutton(self.fr, variable = self.remainTop, text = 'Window always on top', command = lambda par=self.remainTop.get(): self.remainTopEvent(par)).grid(column=0, row=0, sticky="W")
+        ttk.Checkbutton(self.fr, variable = self.remainTop, text = 'Window always on top').grid(column=0, row=1, sticky="W")
+        self.showStopping = IntVar()
+        self.showStopping.set(1)
+        ttk.Checkbutton(self.fr, variable = self.showStopping, text = 'Show all stopping stations', command = lambda : self.showPassed.set(0) if self.showStopping.get() == 0 else None).grid(column=0, row=2, sticky="W")
+        self.showPassed = IntVar()
+        self.showPassed.set(0)
+        ttk.Checkbutton(self.fr, variable = self.showPassed, text = 'Show all passed stations', command = lambda : self.showStopping.set(1) if self.showPassed.get() == 1 else None).grid(column=0, row=3, sticky="W")
         #ttk.Label(self.fr, text = 'Show all stopping stations').grid(column=1, row=0)
         self.rootb.protocol("WM_DELETE_WINDOW", lambda : self.exitEvent())
+        self.fetch(info)
         self.rootb.mainloop()
+    def checkRemainTop(self):
+        if self.remainTop.get() == 0:
+            self.rootb.attributes('-topmost', False)
+            self.root.attributes('-topmost', False)
+        else:
+            self.rootb.attributes('-topmost', True)
+            self.root.attributes('-topmost', True)
+        self.root.after(1000, self.checkRemainTop)
+    def fetch(self, info):
+        self.details = requests.get('https://stepfordcountyrailway.co.uk/api/Game/Servers/' + info['id'], headers = headers).json()
+        x = 0
+        while x < 900:
+            x+=50
+            self.cvs.create_line(x, 0, x, 675, fill = '#ffff00')
+            x+=50
+            self.cvs.create_line(x, 0, x, 675)
+        y = 0
+        while y < 675:
+            y+=50
+            self.cvs.create_line(0, y, 900, y, fill = '#ffff00')
+            y+=50
+            self.cvs.create_line(0, y, 900, y)
     def exitEvent(self):
         self.root.destroy()
         self.rootb.destroy()
@@ -68,7 +105,7 @@ def displayPage():
     i = (pg - 1) * 10
     j = 1
     while i < pg * 10 and i < res.json()['serverCount']:
-        ttk.Label(fr, text = 'Server ' + servers[i]['name'] + ' - ' + str(servers[i]['playerCount']) + ' players').grid(column=0, row=j)
+        ttk.Label(fr, text = 'Server ' + servers[i]['name'] + ' - ' + str(servers[i]['playerCount']) + ' players').grid(column=0, row=j, sticky="W")
         ttk.Button(fr, text = 'Details', command = lambda i = i: details(i)).grid(column=1, row=j)
         i += 1
         j += 1
@@ -110,6 +147,7 @@ def load():
     return True
 root = Tk()
 root.title('SCR Status')
+root.resizable(False, False)
 fr = ttk.Frame(root, padding = '10')
 fr.grid()
 if not load():
