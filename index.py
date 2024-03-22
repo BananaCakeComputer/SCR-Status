@@ -16,9 +16,78 @@ headers = {
 'Sec-Fetch-Mode': 'cors',
 'Sec-Fetch-Site': 'same-origin',
 'TE': 'trailers'}
-stationLocation = {
-'': '',
-'': ''}
+class Station:
+    def __init__(self, id):
+        self.id = id
+        self.sched = []
+    def getXAxis(self):
+        return stationLocations[self.id][0]
+stationLocations = {
+'Benton': [],
+'Coxly': [],
+'Bodin': [],
+'AngelPass': [],
+'StHelensBridge': [],
+'StepfordEast': [],
+'StepfordCentral': [],
+'PortBenton': [],
+'Greenslade': [],
+'WhitneyGreen': [],
+'MorganstownDocks': [],
+'CambridgeStreet': [],
+'AirportWest': [],
+'BentonBridge': [],
+'AirportCentral': [],
+'AirportParkway': [],
+'HamptonHargate': [],
+'WaterNewton': [],
+'StepfordRoad': [],
+'WestBenton': [],
+'FaradayRoad': [],
+'EdenQuay': [],
+'NewryHarbour': [],
+'Newry': [],
+'RocketParade': [],
+'Connolly': [],
+'AshlanPark': [],
+'LeightonCity': [],
+'StepfordVictoria': [],
+'FinancialQuarter': [],
+'CityHospital': [],
+'Berrily': [],
+'Morganstown': [],
+'NewHarrow': [],
+'ElsemerePond': [],
+'ElsemereJunction': [],
+'BeaulieuPark': [],
+'EastBerrily': [],
+'JamesStreet': [],
+'Edgemead': [],
+'Terminal1': [],
+'Terminal2': [],
+'Terminal3': [],
+'Whitefield': [],
+'StepfordUnited': [],
+'HighStreet': [],
+'WhitefieldLido': [],
+'WoodheadLane': [],
+'HoughtonRake': [],
+'Westwyvern': [],
+'Llyn': [],
+'Faymere': [],
+'Westercoast': [],
+'MillcastleRacecourse': [],
+'Millcastle': [],
+'Starryloch': [],
+'Northshore': [],
+'Beechley': [],
+'Willowfield': [],
+'HemdonPark': [],
+'UpperStaploe': [],
+'LeightonWest': [],
+'RosedaleVillage': [],
+'Farleigh': [],
+'Esterfield': []}
 pg = 1
 subWin = []
 roleColors = {'Guards': '#ebbc25','Drivers': '#d84340', 'Passengers': '#8a889e', 'Dispatchers': '#eb842d', 'Signallers': '#12af86'}
@@ -121,6 +190,28 @@ def displayPage():
         ttk.Button(fr, text = 'Previous Page', command = lambda : pre()).grid(column=0, row=11)
     ttk.Label(fr, text = 'Total Servers: ' + str(res.json()['serverCount'])).grid(column=0, row=0)
     ttk.Button(fr, text = 'Refresh', command = lambda : load()).grid(column=1, row=0)
+    #usrFr = ttk.Frame(root)
+    #print(requests.get('https://auth.stepfordcountyrailway.co.uk/connect/userinfo', headers = headers).content)
+    #crtUsrComDet = requests.get('https://auth.stepfordcountyrailway.co.uk/connect/userinfo', headers = headers).json()
+    #print(crtUsrComDet)
+    crtUsr = User(3512057168)
+    #crtUsr = User(crtUsrComDet['roblox_user_id'])
+    avt = ImageTk.PhotoImage(crtUsr.getAvatar().resize((20, 20), Image.LANCZOS))
+    avtEle = ttk.Label(fr, image=avt)
+    avtEle.grid(column=0, row=12, sticky="W")
+    avtEle.image = avt
+    #usrFr.grid(column=0, row=12)
+class User:
+    def __init__(self, playerId):
+        self.id = playerId
+        self.activity = requests.get('https://stepfordcountyrailway.co.uk/api/Game/Players/' + str(self.id) + '/CurrentActivity', headers = headers).json()
+        self.info = requests.get('https://stepfordcountyrailway.co.uk/api/Game/Players/' + str(self.id), headers = headers).json()
+        self.avt = None
+    def getAvatar(self):
+        if self.avt == None:
+            self.avt = Image.open(requests.get(self.info['avatarUrl'], stream=True).raw)
+        #self.avt.show()
+        return self.avt
 def pre():
     global pg
     pg -= 1
